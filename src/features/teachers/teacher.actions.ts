@@ -1,0 +1,139 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+export async function getTeachers() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("teachers")
+    .select(`
+      id,
+      specialization,
+      created_at,
+      updated_at,
+      employee_id,
+      employees (
+        employee_number,
+        employment_type,
+        status,
+        people (
+          first_name,
+          last_name,
+          contact_number,
+          gender
+        )
+      )
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching teachers:", error);
+    return [];
+  }
+
+  return data;
+}
+
+export async function createTeacher(data: {
+  first_name: string;
+  last_name: string;
+  employee_number: string;
+  specialization?: string;
+  employment_type?: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "SUBSTITUTE";
+  gender?: string;
+  contact_number?: string;
+}) {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  let schoolId = userProfile?.school_id;
+
+  if (!schoolId) {
+    const { data: school } = await supabase.from("schools").select("id").limit(1).maybeSingle();
+    schoolId = school?.id;
+  }
+
+  if (!schoolId) {
+    const { data: newSchool } = await supabase
+      .from("schools")
+      .insert([{ name: "SmartSchool International Academy" }])
+      .select("id")
+      .single();
+    schoolId = newSchool?.id || "00000000-0000-0000-0000-000000000001";
+  }
+
+  // 1. Insert person
+  const { data: person, error: personError } = await supabase
+    .from("people")
+    .insert({
+      first_name: data.first_name,
+      last_name: data.last_name,
+      gender: data.gender ? data.gender.toUpperCase() : null,
+      contact_number: data.contact_number || null,
+    })
+    .select("id")
+    .single();
+
+  if (personError || !person) {
+    console.error("Error creating person for teacher:", personError);
+    return { success: false, error: personError?.message || "Failed to create person record." };
+  }
+
+  // 2. Insert employee
+  const { data: employee, error: empError } = await supabase
+    .from("employees")
+    .insert({
+      person_id: person.id,
+      school_id: schoolId,
+      employee_number: data.employee_number,
+      employment_type: data.employment_type || "FULL_TIME",
+      status: "ACTIVE",
+    })
+    .select("id")
+    .single();
+
+  if (empError || !employee) {
+    console.error("Error creating employee for teacher:", empError);
+    return { success: false, error: empError?.message || "Failed to create employee record." };
+  }
+
+  // 3. Insert teacher
+  const { error: teacherError } = await supabase.from("teachers").insert({
+    employee_id: employee.id,
+    specialization: data.specialization || null,
+  });
+
+  if (teacherError) {
+    console.error("Error creating teacher:", teacherError);
+    return { success: false, error: teacherError.message };
+  }
+
+  revalidatePath("/admin/teachers");
+  return { success: true };
+}
+
+export async function deleteTeacher(teacherId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("teachers")
+    .delete()
+    .eq("id", teacherId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/teachers");
+  return { success: true };
+}
