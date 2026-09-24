@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, Shield, Users } from "lucide-react";
+import { GraduationCap, Shield, Users, UserCheck, User } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
 
@@ -15,8 +15,11 @@ export default function Home() {
           <Link href="/verify-id" className="text-sm font-medium hover:underline">
             Verify ID
           </Link>
-          <Link href="/login" className={cn(buttonVariants({ variant: "default" }))}>
-            Sign In
+          <Link href="/student-login" className="text-sm font-medium hover:underline text-muted-foreground hover:text-foreground">
+            Student Portal
+          </Link>
+          <Link href="/staft/staft/staft/login" className={cn(buttonVariants({ variant: "default" }))}>
+            Staff Portal
           </Link>
         </nav>
       </header>
@@ -29,9 +32,23 @@ export default function Home() {
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Secure, scalable, and offline-capable platform for managing students, grades, digital IDs, and administrative workflows.
           </p>
+          
+          {/* Public Portal Access Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-            <Link href="/login" className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}>
-              Access Portal
+            <Link
+              href="/student-login"
+              className={cn(buttonVariants({ size: "lg", variant: "default" }), "w-full sm:w-auto font-bold flex items-center gap-2")}
+            >
+              <UserCheck className="h-4 w-4" />
+              Student & Parent Portal
+            </Link>
+
+            <Link
+              href="/staft/staft/staft/login"
+              className={cn(buttonVariants({ size: "lg", variant: "outline" }), "w-full sm:w-auto font-medium flex items-center gap-2")}
+            >
+              <User className="h-4 w-4" />
+              Staff Portal
             </Link>
           </div>
         </div>
@@ -48,7 +65,7 @@ export default function Home() {
             <Users className="h-10 w-10 text-primary mb-2" />
             <h3 className="font-semibold text-lg">Unified Portals</h3>
             <p className="text-sm text-muted-foreground text-center">
-              Dedicated interfaces for students, teachers, and administrators.
+              Dedicated interfaces for students, teachers, and staff.
             </p>
           </div>
           <div className="flex flex-col items-center space-y-2 p-6 rounded-lg bg-card border text-card-foreground shadow-sm">
