@@ -34,6 +34,10 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/student-login') &&
+    !request.nextUrl.pathname.startsWith('/admin/111/admin/login') &&
+    !request.nextUrl.pathname.startsWith('/staft/staft/staft/login') &&
+    !request.nextUrl.pathname.startsWith('/staff/staff/staff/login') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     request.nextUrl.pathname !== '/' &&
     !request.nextUrl.pathname.startsWith('/verify-id') // public id verification route

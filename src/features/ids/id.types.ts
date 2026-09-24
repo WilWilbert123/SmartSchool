@@ -34,3 +34,23 @@ export interface StudentID {
   expiry_date: string;
   qr_data: string;
 }
+
+export interface IDVerificationResult {
+  found: boolean;
+  isValid: boolean;
+  idNumber: string;
+  holderName: string;
+  role: 'STUDENT' | 'TEACHER' | 'STAFF' | 'ADMIN';
+  schoolName: string;
+  status: 'ACTIVE' | 'ENROLLED' | 'GRADUATED' | 'INACTIVE' | 'REVOKED' | 'EXPIRED' | 'NOT_FOUND';
+  photoUrl?: string | null;
+  issuedDate?: string;
+  expiryDate?: string;
+  gradeOrDept?: string;
+  guardianName?: string;
+  guardianContact?: string;
+  verifiedAt: string;
+  verificationHash: string;
+  message?: string;
+}
+
