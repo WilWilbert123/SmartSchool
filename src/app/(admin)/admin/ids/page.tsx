@@ -1,10 +1,11 @@
 import { Plus, Settings, CreditCard, Search, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
-import { getIDTemplates } from "@/features/ids/id.actions";
+import { getIDTemplates, getRecentIDIssuances } from "@/features/ids/id.actions";
 import { IDCardPreview } from "@/components/ids/id-card-preview";
 
 export default async function AdminIDsPage() {
   const { data: templates } = await getIDTemplates();
+  const { data: recentStudents } = await getRecentIDIssuances();
 
   return (
     <div className="space-y-6 pb-12">
@@ -95,23 +96,31 @@ export default async function AdminIDsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {[1, 2, 3].map((i) => (
-                    <tr key={i} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-6 py-4 font-medium">Student Name {i}</td>
-                      <td className="px-6 py-4 font-mono text-xs">2024-00{i}</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600">
-                          Active
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">Oct 12, 2024</td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-muted-foreground hover:text-foreground">
-                          <MoreHorizontal className="h-5 w-5" />
-                        </button>
+                  {recentStudents && recentStudents.length > 0 ? (
+                    recentStudents.map((s) => (
+                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-6 py-4 font-medium">{s.name}</td>
+                        <td className="px-6 py-4 font-mono text-xs">{s.student_number}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600">
+                            {s.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">{s.issued_date}</td>
+                        <td className="px-6 py-4 text-right">
+                          <Link href={`/admin/students/${s.id}`} className="text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="h-5 w-5" />
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                        No student ID records found.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

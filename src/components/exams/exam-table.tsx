@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, Trash2, Calendar, Clock, MapPin, BookOpen, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Search, Plus, Trash2, Calendar, Clock, MapPin, BookOpen, Edit2, Check, X, Loader2 } from "lucide-react";
 import { Exam } from "@/features/exams/exam.types";
-import { createExam, deleteExam, updateExamStatus } from "@/features/exams/exam.actions";
+import { createExam, deleteExam, updateExamStatus, updateExam } from "@/features/exams/exam.actions";
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog";
 
 interface ExamTableProps {
@@ -19,6 +19,18 @@ export function ExamTable({ initialExams, subjects, classes }: ExamTableProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSubjectId, setEditSubjectId] = useState("");
+  const [editClassId, setEditClassId] = useState("");
+  const [editExamDate, setEditExamDate] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
+  const [editTotalMarks, setEditTotalMarks] = useState("100");
+  const [editPassingMarks, setEditPassingMarks] = useState("50");
+  const [editRoomNumber, setEditRoomNumber] = useState("");
 
   // Form State
   const [title, setTitle] = useState("");
@@ -42,6 +54,71 @@ export function ExamTable({ initialExams, subjects, classes }: ExamTableProps) {
 
     return matchesSearch && matchesStatus;
   });
+
+  const startEdit = (exam: Exam) => {
+    setEditingId(exam.id);
+    setEditTitle(exam.title);
+    setEditSubjectId(exam.subject_id || "");
+    setEditClassId(exam.class_id || "");
+    setEditExamDate(exam.exam_date ? exam.exam_date.slice(0, 10) : "");
+    setEditStartTime(exam.start_time || "");
+    setEditEndTime(exam.end_time || "");
+    setEditTotalMarks(String(exam.total_marks || 100));
+    setEditPassingMarks(String(exam.passing_marks || 50));
+    setEditRoomNumber(exam.room_number || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!editTitle || !editExamDate) return;
+
+    setIsSubmitting(true);
+    const res = await updateExam(id, {
+      title: editTitle,
+      subject_id: editSubjectId || undefined,
+      class_id: editClassId || undefined,
+      exam_date: editExamDate,
+      start_time: editStartTime || undefined,
+      end_time: editEndTime || undefined,
+      total_marks: Number(editTotalMarks) || 100,
+      passing_marks: Number(editPassingMarks) || 50,
+      room_number: editRoomNumber || undefined,
+    });
+    setIsSubmitting(false);
+
+    if (res.success) {
+      const selectedSubject = subjects.find((s) => s.id === editSubjectId);
+      const selectedClass = classes.find((c) => c.id === editClassId);
+
+      setExams((prev) =>
+        prev.map((item) => {
+          if (item.id === id) {
+            return {
+              ...item,
+              title: editTitle,
+              subject_id: editSubjectId || null,
+              class_id: editClassId || null,
+              exam_date: editExamDate,
+              start_time: editStartTime || null,
+              end_time: editEndTime || null,
+              total_marks: Number(editTotalMarks) || 100,
+              passing_marks: Number(editPassingMarks) || 50,
+              room_number: editRoomNumber || null,
+              subjects: selectedSubject ? { code: selectedSubject.code, name: selectedSubject.name } : item.subjects,
+              classes: selectedClass ? { grade_level: selectedClass.grade_level, section_name: selectedClass.section_name } : item.classes,
+            };
+          }
+          return item;
+        })
+      );
+      setEditingId(null);
+    } else {
+      alert("Failed to update exam: " + res.error);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,75 +256,222 @@ export function ExamTable({ initialExams, subjects, classes }: ExamTableProps) {
                   </td>
                 </tr>
               ) : (
-                filteredExams.map((exam) => (
-                  <tr key={exam.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-foreground">{exam.title}</div>
-                    </td>
+                filteredExams.map((exam) => {
+                  const isEditing = editingId === exam.id;
 
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-foreground">
-                        {exam.subjects ? `${exam.subjects.code} - ${exam.subjects.name}` : "General"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {exam.classes ? `${exam.classes.grade_level.replace('_', ' ')} (${exam.classes.section_name})` : "All Classes"}
-                      </div>
-                    </td>
+                  if (isEditing) {
+                    return (
+                      <tr key={exam.id} className="bg-primary/5">
+                        <td className="px-6 py-3">
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="Exam Title"
+                            className="w-full h-8 px-2 border rounded-lg text-xs bg-background font-semibold"
+                          />
+                        </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
-                        <Calendar className="h-3.5 w-3.5 text-primary" />
-                        {new Date(exam.exam_date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </div>
-                      {(exam.start_time || exam.end_time) && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {exam.start_time?.slice(0, 5)} - {exam.end_time?.slice(0, 5)}
+                        <td className="px-6 py-3">
+                          <div className="space-y-1">
+                            <select
+                              value={editSubjectId}
+                              onChange={(e) => setEditSubjectId(e.target.value)}
+                              className="w-full h-8 px-2 border rounded-lg text-xs bg-background"
+                            >
+                              <option value="">Select Subject...</option>
+                              {subjects.map((sub) => (
+                                <option key={sub.id} value={sub.id}>
+                                  {sub.code} - {sub.name}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              value={editClassId}
+                              onChange={(e) => setEditClassId(e.target.value)}
+                              className="w-full h-7 px-2 border rounded-lg text-[11px] bg-background text-muted-foreground"
+                            >
+                              <option value="">Select Class...</option>
+                              {classes.map((cls) => (
+                                <option key={cls.id} value={cls.id}>
+                                  {cls.grade_level.replace('_', ' ')} ({cls.section_name})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-3">
+                          <div className="space-y-1">
+                            <input
+                              type="date"
+                              value={editExamDate}
+                              onChange={(e) => setEditExamDate(e.target.value)}
+                              className="w-full h-8 px-2 border rounded-lg text-xs bg-background"
+                            />
+                            <div className="flex gap-1">
+                              <input
+                                type="time"
+                                value={editStartTime}
+                                onChange={(e) => setEditStartTime(e.target.value)}
+                                className="w-1/2 h-7 px-1 border rounded-lg text-[11px] bg-background"
+                              />
+                              <input
+                                type="time"
+                                value={editEndTime}
+                                onChange={(e) => setEditEndTime(e.target.value)}
+                                className="w-1/2 h-7 px-1 border rounded-lg text-[11px] bg-background"
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-xs">
+                              <input
+                                type="number"
+                                value={editPassingMarks}
+                                onChange={(e) => setEditPassingMarks(e.target.value)}
+                                placeholder="Pass"
+                                className="w-12 h-7 px-1 border rounded-lg text-center bg-background"
+                              />
+                              <span>/</span>
+                              <input
+                                type="number"
+                                value={editTotalMarks}
+                                onChange={(e) => setEditTotalMarks(e.target.value)}
+                                placeholder="Total"
+                                className="w-12 h-7 px-1 border rounded-lg text-center bg-background"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={editRoomNumber}
+                              onChange={(e) => setEditRoomNumber(e.target.value)}
+                              placeholder="Room #"
+                              className="w-full h-7 px-2 border rounded-lg text-[11px] bg-background text-muted-foreground"
+                            />
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-3">
+                          <select
+                            value={exam.status}
+                            onChange={(e) => handleStatusChange(exam.id, e.target.value as Exam["status"])}
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer ${getStatusBadge(
+                              exam.status
+                            )}`}
+                          >
+                            <option value="SCHEDULED">SCHEDULED</option>
+                            <option value="ONGOING">ONGOING</option>
+                            <option value="COMPLETED">COMPLETED</option>
+                            <option value="CANCELLED">CANCELLED</option>
+                          </select>
+                        </td>
+
+                        <td className="px-6 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => saveEdit(exam.id)}
+                              disabled={isSubmitting}
+                              className="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                              title="Save changes"
+                            >
+                              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                              title="Cancel edit"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return (
+                    <tr key={exam.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-foreground">{exam.title}</div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-foreground">
+                          {exam.subjects ? `${exam.subjects.code} - ${exam.subjects.name}` : "General"}
                         </div>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="text-xs font-medium text-foreground">
-                        Marks: {exam.passing_marks} / {exam.total_marks}
-                      </div>
-                      {exam.room_number && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                          <MapPin className="h-3 w-3" /> Room {exam.room_number}
+                        <div className="text-xs text-muted-foreground">
+                          {exam.classes ? `${exam.classes.grade_level.replace('_', ' ')} (${exam.classes.section_name})` : "All Classes"}
                         </div>
-                      )}
-                    </td>
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <select
-                        value={exam.status}
-                        onChange={(e) => handleStatusChange(exam.id, e.target.value as Exam["status"])}
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer ${getStatusBadge(
-                          exam.status
-                        )}`}
-                      >
-                        <option value="SCHEDULED">SCHEDULED</option>
-                        <option value="ONGOING">ONGOING</option>
-                        <option value="COMPLETED">COMPLETED</option>
-                        <option value="CANCELLED">CANCELLED</option>
-                      </select>
-                    </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
+                          <Calendar className="h-3.5 w-3.5 text-primary" />
+                          {new Date(exam.exam_date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </div>
+                        {(exam.start_time || exam.end_time) && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {exam.start_time?.slice(0, 5)} - {exam.end_time?.slice(0, 5)}
+                          </div>
+                        )}
+                      </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setDeletingId(exam.id)}
-                        className="text-muted-foreground hover:text-destructive p-2 rounded-lg transition-colors"
-                        title="Delete Exam"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      <td className="px-6 py-4">
+                        <div className="text-xs font-medium text-foreground">
+                          Marks: {exam.passing_marks} / {exam.total_marks}
+                        </div>
+                        {exam.room_number && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                            <MapPin className="h-3 w-3" /> Room {exam.room_number}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <select
+                          value={exam.status}
+                          onChange={(e) => handleStatusChange(exam.id, e.target.value as Exam["status"])}
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer ${getStatusBadge(
+                            exam.status
+                          )}`}
+                        >
+                          <option value="SCHEDULED">SCHEDULED</option>
+                          <option value="ONGOING">ONGOING</option>
+                          <option value="COMPLETED">COMPLETED</option>
+                          <option value="CANCELLED">CANCELLED</option>
+                        </select>
+                      </td>
+
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => startEdit(exam)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                            title="Edit Exam"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(exam.id)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
+                            title="Delete Exam"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

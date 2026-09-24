@@ -137,3 +137,75 @@ export async function deleteTeacher(teacherId: string) {
   revalidatePath("/admin/teachers");
   return { success: true };
 }
+
+export async function updateTeacher(
+  teacherId: string,
+  data: {
+    first_name?: string;
+    last_name?: string;
+    employee_number?: string;
+    specialization?: string;
+    employment_type?: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "SUBSTITUTE";
+    gender?: string;
+    contact_number?: string;
+    status?: string;
+  }
+) {
+  const supabase = await createClient();
+
+  const { data: teacher, error: fetchErr } = await supabase
+    .from("teachers")
+    .select(`
+      id,
+      employee_id,
+      employees (
+        id,
+        person_id
+      )
+    `)
+    .eq("id", teacherId)
+    .single();
+
+  if (fetchErr || !teacher || !teacher.employees) {
+    return { success: false, error: "Teacher record not found." };
+  }
+
+  const employeeId = teacher.employee_id;
+  const personId = (teacher.employees as any).person_id;
+
+  // 1. Update person
+  if (data.first_name || data.last_name || data.contact_number || data.gender) {
+    const personUpdate: any = {};
+    if (data.first_name) personUpdate.first_name = data.first_name;
+    if (data.last_name) personUpdate.last_name = data.last_name;
+    if (data.contact_number !== undefined) personUpdate.contact_number = data.contact_number || null;
+    if (data.gender) personUpdate.gender = data.gender.toUpperCase();
+
+    const { error: pErr } = await supabase.from("people").update(personUpdate).eq("id", personId);
+    if (pErr) return { success: false, error: pErr.message };
+  }
+
+  // 2. Update employee
+  if (data.employee_number || data.employment_type || data.status) {
+    const empUpdate: any = {};
+    if (data.employee_number) empUpdate.employee_number = data.employee_number;
+    if (data.employment_type) empUpdate.employment_type = data.employment_type;
+    if (data.status) empUpdate.status = data.status;
+
+    const { error: eErr } = await supabase.from("employees").update(empUpdate).eq("id", employeeId);
+    if (eErr) return { success: false, error: eErr.message };
+  }
+
+  // 3. Update teacher specialization
+  if (data.specialization !== undefined) {
+    const { error: tErr } = await supabase
+      .from("teachers")
+      .update({ specialization: data.specialization || null })
+      .eq("id", teacherId);
+    if (tErr) return { success: false, error: tErr.message };
+  }
+
+  revalidatePath("/admin/teachers");
+  return { success: true };
+}
+

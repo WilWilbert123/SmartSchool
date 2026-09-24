@@ -170,3 +170,37 @@ export async function deleteClass(classId: string) {
   revalidatePath("/admin/classes");
   return { success: true };
 }
+
+export async function updateClass(
+  classId: string,
+  data: {
+    grade_level?: string;
+    section_name?: string;
+    academic_year_id?: string;
+    adviser_id?: string;
+    room_number?: string;
+  }
+) {
+  const supabase = await createClient();
+
+  const updatePayload: any = {};
+  if (data.grade_level) updatePayload.grade_level = data.grade_level;
+  if (data.section_name) updatePayload.section_name = data.section_name;
+  if (data.academic_year_id) updatePayload.academic_year_id = data.academic_year_id;
+  if (data.adviser_id !== undefined) updatePayload.adviser_id = data.adviser_id || null;
+  if (data.room_number !== undefined) updatePayload.room_number = data.room_number || null;
+
+  const { error } = await supabase
+    .from("classes")
+    .update(updatePayload)
+    .eq("id", classId);
+
+  if (error) {
+    console.error("Error updating class:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/classes");
+  return { success: true };
+}
+

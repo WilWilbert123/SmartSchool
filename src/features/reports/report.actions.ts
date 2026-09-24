@@ -11,7 +11,7 @@ export async function getEnrollmentReportData() {
     .select(`
       id,
       student_number,
-      status,
+      current_status,
       created_at,
       people (
         first_name,
@@ -39,7 +39,7 @@ export async function getEnrollmentReportData() {
       studentNumber: student.student_number || "N/A",
       fullName: `${person.first_name || ""} ${person.last_name || ""}`.trim() || "N/A",
       gender: person.gender || "Unspecified",
-      status: student.status || "ENROLLED",
+      status: student.current_status || "ENROLLED",
       gradeLevel: enrollment.grade_level ? enrollment.grade_level.replace("_", " ") : "Unassigned",
       section: enrollment.section_name || "Unassigned",
       createdDate: new Date(student.created_at).toLocaleDateString(),
@@ -102,8 +102,7 @@ export async function getIdIssuanceReportData() {
     .select(`
       id,
       student_number,
-      lrn_number,
-      status,
+      current_status,
       created_at,
       people (
         first_name,
@@ -122,9 +121,10 @@ export async function getIdIssuanceReportData() {
     return {
       studentNumber: student.student_number || "N/A",
       fullName: `${person.first_name || ""} ${person.last_name || ""}`.trim() || "N/A",
-      lrnNumber: student.lrn_number || "N/A",
-      idStatus: student.status === "ENROLLED" ? "ACTIVE" : student.status || "PENDING",
+      lrnNumber: "N/A",
+      idStatus: student.current_status === "ENROLLED" ? "ACTIVE" : student.current_status || "PENDING",
       issuedAt: new Date(student.created_at).toLocaleDateString(),
     };
   });
 }
+

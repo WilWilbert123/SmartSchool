@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, Trash2, Edit2, BookOpen, AlertCircle } from "lucide-react";
-import { deleteClass, createClass } from "@/features/classes/class.actions";
+import { Search, Plus, Trash2, Edit2, Check, X, Loader2, AlertCircle } from "lucide-react";
+import { deleteClass, createClass, updateClass } from "@/features/classes/class.actions";
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog";
 
 interface ClassTableProps {
@@ -17,10 +17,16 @@ export function ClassTable({ initialData, academicYears, teachers }: ClassTableP
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Form State
+  // Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editGradeLevel, setEditGradeLevel] = useState("GRADE_10");
+  const [editSectionName, setEditSectionName] = useState("");
+  const [editAdviserId, setEditAdviserId] = useState("");
+  const [editRoomNumber, setEditRoomNumber] = useState("");
+
+  // Create Form State
   const [gradeLevel, setGradeLevel] = useState("GRADE_10");
   const [sectionName, setSectionName] = useState("");
   const [academicYearId, setAcademicYearId] = useState("");
@@ -33,6 +39,55 @@ export function ClassTable({ initialData, academicYears, teachers }: ClassTableP
     const search = searchTerm.toLowerCase();
     return sectionName.includes(search) || gradeLevel.includes(search);
   });
+
+  const startEdit = (cls: any) => {
+    setEditingId(cls.id);
+    setEditGradeLevel(cls.grade_level || "GRADE_10");
+    setEditSectionName(cls.section_name || "");
+    setEditAdviserId(cls.adviser?.id || cls.adviser_id || "");
+    setEditRoomNumber(cls.room_number || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const saveEdit = async (classId: string) => {
+    setIsSubmitting(true);
+    const res = await updateClass(classId, {
+      grade_level: editGradeLevel,
+      section_name: editSectionName,
+      adviser_id: editAdviserId || undefined,
+      room_number: editRoomNumber || undefined,
+    });
+    setIsSubmitting(false);
+
+    if (res.success) {
+      const assignedTeacher = teachers.find((t) => (t.employee_id || t.id) === editAdviserId);
+      setData((prev) =>
+        prev.map((c) => {
+          if (c.id === classId) {
+            return {
+              ...c,
+              grade_level: editGradeLevel,
+              section_name: editSectionName,
+              room_number: editRoomNumber,
+              adviser: assignedTeacher
+                ? {
+                    id: assignedTeacher.employee_id || assignedTeacher.id,
+                    people: assignedTeacher.employees?.people,
+                  }
+                : null,
+            };
+          }
+          return c;
+        })
+      );
+      setEditingId(null);
+    } else {
+      alert("Failed to update class: " + res.error);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,46 +170,145 @@ export function ClassTable({ initialData, academicYears, teachers }: ClassTableP
                   </td>
                 </tr>
               ) : (
-                filteredData.map((cls) => (
-                  <tr key={cls.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-foreground">
-                        {cls.grade_level?.replace("_", " ")} - {cls.section_name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-foreground">
-                        {cls.academic_years?.name || "2025-2026"}
-                      </div>
-                      <span
-                        className={`inline-flex items-center mt-1 px-2 py-0.5 rounded text-[10px] font-semibold ${
-                          cls.academic_years?.status === "ACTIVE"
-                            ? "bg-emerald-500/10 text-emerald-600"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {cls.academic_years?.status || "ACTIVE"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {cls.adviser?.people
-                        ? `${cls.adviser.people.first_name} ${cls.adviser.people.last_name}`
-                        : "Unassigned"}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {cls.room_number ? `Room ${cls.room_number}` : "Unassigned"}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setIsDeleting(cls.id)}
-                        className="text-muted-foreground hover:text-destructive p-2 rounded-lg transition-colors"
-                        title="Delete Class"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                filteredData.map((cls) => {
+                  const isEditing = editingId === cls.id;
+
+                  if (isEditing) {
+                    return (
+                      <tr key={cls.id} className="bg-primary/5">
+                        <td className="px-6 py-3">
+                          <div className="flex gap-2">
+                            <select
+                              value={editGradeLevel}
+                              onChange={(e) => setEditGradeLevel(e.target.value)}
+                              className="h-8 px-2 border rounded-lg text-xs bg-background"
+                            >
+                              <option value="KINDERGARTEN">Kindergarten</option>
+                              <option value="GRADE_1">Grade 1</option>
+                              <option value="GRADE_2">Grade 2</option>
+                              <option value="GRADE_3">Grade 3</option>
+                              <option value="GRADE_4">Grade 4</option>
+                              <option value="GRADE_5">Grade 5</option>
+                              <option value="GRADE_6">Grade 6</option>
+                              <option value="GRADE_7">Grade 7</option>
+                              <option value="GRADE_8">Grade 8</option>
+                              <option value="GRADE_9">Grade 9</option>
+                              <option value="GRADE_10">Grade 10</option>
+                              <option value="GRADE_11">Grade 11</option>
+                              <option value="GRADE_12">Grade 12</option>
+                            </select>
+                            <input
+                              type="text"
+                              value={editSectionName}
+                              onChange={(e) => setEditSectionName(e.target.value)}
+                              placeholder="Section Name"
+                              className="w-full h-8 px-2 border rounded-lg text-xs bg-background"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 text-muted-foreground text-xs font-medium">
+                          {cls.academic_years?.name || "2025-2026"} (ACTIVE)
+                        </td>
+                        <td className="px-6 py-3">
+                          <select
+                            value={editAdviserId}
+                            onChange={(e) => setEditAdviserId(e.target.value)}
+                            className="w-full h-8 px-2 border rounded-lg text-xs bg-background"
+                          >
+                            <option value="">Unassigned</option>
+                            {teachers.map((t) => {
+                              const person = t.employees?.people;
+                              const name = person ? `${person.first_name} ${person.last_name}` : "Teacher";
+                              return (
+                                <option key={t.employee_id || t.id} value={t.employee_id || t.id}>
+                                  {name}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </td>
+                        <td className="px-6 py-3">
+                          <input
+                            type="text"
+                            value={editRoomNumber}
+                            onChange={(e) => setEditRoomNumber(e.target.value)}
+                            placeholder="Room #"
+                            className="w-full h-8 px-2 border rounded-lg text-xs bg-background"
+                          />
+                        </td>
+                        <td className="px-6 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => saveEdit(cls.id)}
+                              disabled={isSubmitting}
+                              className="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                              title="Save changes"
+                            >
+                              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                              title="Cancel edit"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return (
+                    <tr key={cls.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-foreground">
+                          {cls.grade_level?.replace("_", " ")} - {cls.section_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-foreground">
+                          {cls.academic_years?.name || "2025-2026"}
+                        </div>
+                        <span
+                          className={`inline-flex items-center mt-1 px-2 py-0.5 rounded text-[10px] font-semibold ${
+                            cls.academic_years?.status === "ACTIVE"
+                              ? "bg-emerald-500/10 text-emerald-600"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {cls.academic_years?.status || "ACTIVE"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {cls.adviser?.people
+                          ? `${cls.adviser.people.first_name} ${cls.adviser.people.last_name}`
+                          : "Unassigned"}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {cls.room_number ? `Room ${cls.room_number}` : "Unassigned"}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => startEdit(cls)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                            title="Edit Class"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setIsDeleting(cls.id)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
+                            title="Delete Class"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -303,3 +457,4 @@ export function ClassTable({ initialData, academicYears, teachers }: ClassTableP
     </div>
   );
 }
+

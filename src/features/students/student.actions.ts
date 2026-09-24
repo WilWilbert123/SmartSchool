@@ -88,6 +88,8 @@ export async function createStudent(data: StudentFormInput) {
       gender: data.gender ? data.gender.toUpperCase() : null,
       contact_number: data.contact_number || null,
       address: data.address || null,
+      profile_photo_url: data.profile_photo_url || null,
+      student_signature_url: data.student_signature_url || null,
     })
     .select('id')
     .single();
@@ -104,10 +106,16 @@ export async function createStudent(data: StudentFormInput) {
       person_id: person.id,
       school_id: schoolId,
       student_number: data.student_number,
+      lrn: data.lrn || null,
+      grade_level: data.grade_level || null,
+      section_name: data.section_name || null,
+      school_year: data.school_year || "2025-2026",
       admission_date: data.admission_date,
       current_status: data.current_status,
       guardian_name: data.guardian_name || null,
+      guardian_relationship: data.guardian_relationship || null,
       guardian_contact: data.guardian_contact || null,
+      blood_type: data.blood_type || null,
     });
 
   if (studentError) {
@@ -118,3 +126,73 @@ export async function createStudent(data: StudentFormInput) {
   revalidatePath("/admin/students");
   return { success: true };
 }
+
+export async function updateStudent(id: string, data: Partial<StudentFormInput>) {
+  const supabase = await createClient();
+
+  const { data: student, error: fetchErr } = await supabase
+    .from("students")
+    .select("person_id")
+    .eq("id", id)
+    .single();
+
+  if (fetchErr || !student) {
+    return { success: false, error: "Student not found." };
+  }
+
+  // Update person if name/contact changed
+  if (data.first_name || data.last_name || data.contact_number || data.gender) {
+    const personUpdate: any = {};
+    if (data.first_name) personUpdate.first_name = data.first_name;
+    if (data.last_name) personUpdate.last_name = data.last_name;
+    if (data.middle_name !== undefined) personUpdate.middle_name = data.middle_name || null;
+    if (data.contact_number !== undefined) personUpdate.contact_number = data.contact_number || null;
+    if (data.gender) personUpdate.gender = data.gender.toUpperCase();
+
+    const { error: pErr } = await supabase
+      .from("people")
+      .update(personUpdate)
+      .eq("id", student.person_id);
+
+    if (pErr) {
+      return { success: false, error: pErr.message };
+    }
+  }
+
+  // Update student table
+  const studentUpdate: any = {};
+  if (data.student_number) studentUpdate.student_number = data.student_number;
+  if (data.current_status) studentUpdate.current_status = data.current_status;
+  if (data.admission_date) studentUpdate.admission_date = data.admission_date;
+
+  if (Object.keys(studentUpdate).length > 0) {
+    const { error: sErr } = await supabase
+      .from("students")
+      .update(studentUpdate)
+      .eq("id", id);
+
+    if (sErr) {
+      return { success: false, error: sErr.message };
+    }
+  }
+
+  revalidatePath("/admin/students");
+  return { success: true };
+}
+
+export async function deleteStudent(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("students")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/students");
+  return { success: true };
+}
+
