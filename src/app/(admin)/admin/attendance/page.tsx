@@ -1,6 +1,8 @@
 import { getAttendanceLogs } from "@/features/attendance/attendance.actions";
 import { AttendanceTable } from "@/components/attendance/attendance-table";
-import { CalendarCheck, Plus, Download } from "lucide-react";
+import { RecordAttendanceDialog } from "@/components/attendance/record-attendance-dialog";
+import { ImportAttendanceDialog } from "@/components/attendance/import-attendance-dialog";
+import { CalendarCheck } from "lucide-react";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 
 export default async function AttendancePage() {
@@ -24,14 +26,8 @@ export default async function AttendancePage() {
         </div>
         
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center justify-center rounded-xl text-sm font-medium h-10 px-4 border border-input bg-background hover:bg-accent text-foreground transition-colors shadow-sm">
-            <Download className="mr-2 h-4 w-4 text-primary" />
-            Export Report
-          </button>
-          <button className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Record Attendance
-          </button>
+          <ImportAttendanceDialog />
+          <RecordAttendanceDialog />
         </div>
       </div>
 

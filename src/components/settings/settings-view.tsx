@@ -2,19 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Monitor, CheckCircle, ShieldCheck, Bell, Building, Palette, Lock, AlertCircle, Loader2, Check } from "lucide-react";
+import { Sun, Moon, Monitor, CheckCircle, ShieldCheck, Bell, Building, Palette, Lock, AlertCircle, Loader2, Check, Upload, Image as ImageIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getSchoolSettings, updateSchoolSettings } from "@/features/settings/settings.actions";
 import { ACCENT_COLORS, ACCENT_COLOR_CATEGORIES, applyAccentColor } from "@/lib/theme/accent-colors";
 
 export function SettingsView() {
   const { setTheme, theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"general" | "appearance" | "notifications" | "security">("appearance");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Toast / Status Message
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingSig, setIsUploadingSig] = useState(false);
 
   // General Settings State
   const [schoolName, setSchoolName] = useState("SmartSchool International Academy");
@@ -22,6 +29,12 @@ export function SettingsView() {
   const [contactEmail, setContactEmail] = useState("admin@smartschool.edu");
   const [contactPhone, setContactPhone] = useState("+1 (555) 019-2831");
   const [address, setAddress] = useState("123 Education Blvd, Academic District");
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  const [rightLogoUrl, setRightLogoUrl] = useState<string>("");
+  const [isUploadingRightLogo, setIsUploadingRightLogo] = useState(false);
+  const [principalName, setPrincipalName] = useState("Dr. Maria Santos");
+  const [principalTitle, setPrincipalTitle] = useState("School Principal");
+  const [principalSignatureUrl, setPrincipalSignatureUrl] = useState<string>("");
 
   // Appearance State
   const [accentColor, setAccentColor] = useState("blue");
@@ -49,6 +62,11 @@ export function SettingsView() {
         if (data.email) setContactEmail(data.email);
         if (data.phone) setContactPhone(data.phone);
         if (data.address) setAddress(data.address);
+        if (data.logo_url) setLogoUrl(data.logo_url);
+        if (data.right_logo_url) setRightLogoUrl(data.right_logo_url);
+        if (data.principal_name) setPrincipalName(data.principal_name);
+        if (data.principal_title) setPrincipalTitle(data.principal_title);
+        if (data.principal_signature_url) setPrincipalSignatureUrl(data.principal_signature_url);
       }
       setIsLoadingSettings(false);
     }
@@ -87,6 +105,11 @@ export function SettingsView() {
       email: contactEmail,
       phone: contactPhone,
       address,
+      logo_url: logoUrl,
+      right_logo_url: rightLogoUrl,
+      principal_name: principalName,
+      principal_title: principalTitle,
+      principal_signature_url: principalSignatureUrl,
     });
 
     setIsSavingGeneral(false);
@@ -149,6 +172,8 @@ export function SettingsView() {
       setSaveSuccess(null);
     }, 3500);
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -277,6 +302,187 @@ export function SettingsView() {
                 onChange={(e) => setAddress(e.target.value)}
                 className="w-full bg-background border h-10 rounded-xl px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
               />
+            </div>
+          </div>
+
+            {/* School Branding & Official ECR Headers */}
+            <div className="pt-4 border-t space-y-4">
+              <h3 className="text-sm font-semibold text-foreground">Official School & ECR Header Logos (Left & Right)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left Logo (Kagawaran ng Edukasyon Seal) */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Left ECR Header Logo (Default: Kagawaran ng Edukasyon Seal)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <img src={logoUrl || "/deped-seal.svg"} alt="Left Logo" className="h-12 w-12 object-contain border rounded-lg bg-background p-1" />
+                    <div className="flex-1 space-y-1">
+                      <input
+                        type="text"
+                        placeholder="Left Logo URL..."
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        className="w-full bg-background border h-9 rounded-lg px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                      />
+                      <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground transition-colors">
+                        {isUploadingLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-primary" />}
+                        <span>{isUploadingLogo ? "Uploading..." : "Upload Left Logo"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setIsUploadingLogo(true);
+                            try {
+                              const supabase = createClient();
+                              const fileName = `logo-left-${Date.now()}-${file.name}`;
+                              const { data, error } = await supabase.storage.from('id-assets').upload(fileName, file, { upsert: true });
+                              if (error) throw error;
+                              const { data: publicUrlData } = supabase.storage.from('id-assets').getPublicUrl(fileName);
+                              setLogoUrl(publicUrlData.publicUrl);
+                            } catch (err) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => setLogoUrl(ev.target?.result as string);
+                              reader.readAsDataURL(file);
+                            } finally {
+                              setIsUploadingLogo(false);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Logo (DepEd Official Logo) */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Right ECR Header Logo (Default: Official DepEd Logo)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <img src={rightLogoUrl || "/deped-logo.svg"} alt="Right Logo" className="h-12 w-20 object-contain border rounded-lg bg-background p-1" />
+                    <div className="flex-1 space-y-1">
+                      <input
+                        type="text"
+                        placeholder="Right Logo URL..."
+                        value={rightLogoUrl}
+                        onChange={(e) => setRightLogoUrl(e.target.value)}
+                        className="w-full bg-background border h-9 rounded-lg px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                      />
+                      <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground transition-colors">
+                        {isUploadingRightLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-primary" />}
+                        <span>{isUploadingRightLogo ? "Uploading..." : "Upload Right Logo"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setIsUploadingRightLogo(true);
+                            try {
+                              const supabase = createClient();
+                              const fileName = `logo-right-${Date.now()}-${file.name}`;
+                              const { data, error } = await supabase.storage.from('id-assets').upload(fileName, file, { upsert: true });
+                              if (error) throw error;
+                              const { data: publicUrlData } = supabase.storage.from('id-assets').getPublicUrl(fileName);
+                              setRightLogoUrl(publicUrlData.publicUrl);
+                            } catch (err) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => setRightLogoUrl(ev.target?.result as string);
+                              reader.readAsDataURL(file);
+                            } finally {
+                              setIsUploadingRightLogo(false);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Principal Name */}
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    Principal / Registrar Name
+                  </label>
+                  <input
+                    type="text"
+                    value={principalName}
+                    onChange={(e) => setPrincipalName(e.target.value)}
+                    placeholder="e.g. Dr. Maria Santos"
+                    className="w-full bg-background border h-10 rounded-xl px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  />
+                </div>
+
+                {/* Principal Title */}
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    Principal Official Title
+                  </label>
+                  <input
+                    type="text"
+                    value={principalTitle}
+                    onChange={(e) => setPrincipalTitle(e.target.value)}
+                    placeholder="e.g. School Principal"
+                    className="w-full bg-background border h-10 rounded-xl px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  />
+                </div>
+
+              {/* Principal Signature */}
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-muted-foreground">
+                  Principal Signature Image (PNG Transparent)
+                </label>
+                <div className="flex items-center gap-3">
+                  {principalSignatureUrl ? (
+                    <img src={principalSignatureUrl} alt="Signature" className="h-12 w-20 object-contain border rounded-lg bg-background p-1" />
+                  ) : (
+                    <div className="h-12 w-20 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground bg-muted/20">
+                      <span className="text-[10px] text-center font-mono">No Sign</span>
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="text"
+                      placeholder="Signature URL or upload..."
+                      value={principalSignatureUrl}
+                      onChange={(e) => setPrincipalSignatureUrl(e.target.value)}
+                      className="w-full bg-background border h-9 rounded-lg px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    />
+                    <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground transition-colors">
+                      {isUploadingSig ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-primary" />}
+                      <span>{isUploadingSig ? "Uploading..." : "Upload Signature to Supabase"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setIsUploadingSig(true);
+                          try {
+                            const supabase = createClient();
+                            const fileName = `sig-${Date.now()}-${file.name}`;
+                            const { data, error } = await supabase.storage.from('id-assets').upload(fileName, file, { upsert: true });
+                            if (error) throw error;
+                            const { data: publicUrlData } = supabase.storage.from('id-assets').getPublicUrl(fileName);
+                            setPrincipalSignatureUrl(publicUrlData.publicUrl);
+                          } catch (err) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setPrincipalSignatureUrl(ev.target?.result as string);
+                            reader.readAsDataURL(file);
+                          } finally {
+                            setIsUploadingSig(false);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

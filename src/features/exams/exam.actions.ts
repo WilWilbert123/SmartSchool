@@ -76,6 +76,35 @@ export async function updateExamStatus(id: string, status: "SCHEDULED" | "ONGOIN
   return { success: true };
 }
 
+export async function updateExam(id: string, input: Partial<CreateExamInput>) {
+  const supabase = await createClient();
+
+  const updateData: any = { updated_at: new Date().toISOString() };
+  if (input.title !== undefined) updateData.title = input.title;
+  if (input.subject_id !== undefined) updateData.subject_id = input.subject_id || null;
+  if (input.class_id !== undefined) updateData.class_id = input.class_id || null;
+  if (input.exam_date !== undefined) updateData.exam_date = input.exam_date;
+  if (input.start_time !== undefined) updateData.start_time = input.start_time || null;
+  if (input.end_time !== undefined) updateData.end_time = input.end_time || null;
+  if (input.total_marks !== undefined) updateData.total_marks = input.total_marks;
+  if (input.passing_marks !== undefined) updateData.passing_marks = input.passing_marks;
+  if (input.room_number !== undefined) updateData.room_number = input.room_number || null;
+  if (input.status !== undefined) updateData.status = input.status;
+
+  const { error } = await supabase
+    .from("exams")
+    .update(updateData)
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error updating exam:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/exams");
+  return { success: true };
+}
+
 export async function deleteExam(id: string) {
   const supabase = await createClient();
 

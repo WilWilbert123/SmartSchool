@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, Shield, Users, UserCheck, User } from "lucide-react";
+import { GraduationCap, Shield, Users, UserCheck } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
 
@@ -15,11 +15,8 @@ export default function Home() {
           <Link href="/verify-id" className="text-sm font-medium hover:underline">
             Verify ID
           </Link>
-          <Link href="/student-login" className="text-sm font-medium hover:underline text-muted-foreground hover:text-foreground">
+          <Link href="/student-login" className={cn(buttonVariants({ variant: "default" }))}>
             Student Portal
-          </Link>
-          <Link href="/staft/staft/staft/login" className={cn(buttonVariants({ variant: "default" }))}>
-            Staff Portal
           </Link>
         </nav>
       </header>
@@ -41,14 +38,6 @@ export default function Home() {
             >
               <UserCheck className="h-4 w-4" />
               Student & Parent Portal
-            </Link>
-
-            <Link
-              href="/staft/staft/staft/login"
-              className={cn(buttonVariants({ size: "lg", variant: "outline" }), "w-full sm:w-auto font-medium flex items-center gap-2")}
-            >
-              <User className="h-4 w-4" />
-              Staff Portal
             </Link>
           </div>
         </div>

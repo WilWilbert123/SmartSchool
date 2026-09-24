@@ -16,9 +16,9 @@ export function AddStudentDialog() {
         <Plus className="mr-2 h-4 w-4" />
         Add Student
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add New Student</DialogTitle>
+      <DialogContent className="!sm:max-w-4xl !max-w-4xl w-[92vw] sm:w-[85vw] max-h-[85vh] overflow-y-auto p-6 sm:p-7 rounded-3xl shadow-2xl">
+        <DialogHeader className="pb-3 border-b">
+          <DialogTitle className="text-xl font-bold tracking-tight">Add New Student</DialogTitle>
         </DialogHeader>
         <StudentForm onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
       </DialogContent>

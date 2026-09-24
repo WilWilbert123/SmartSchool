@@ -7,7 +7,6 @@ import { Loader2, UserCircle } from "lucide-react";
 import { studentLoginSchema, type StudentLoginInput } from "@/features/auth/auth.schema";
 import { studentLoginAction } from "@/features/auth/auth.actions";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function StudentLoginPage() {
   const router = useRouter();
@@ -91,13 +90,6 @@ export default function StudentLoginPage() {
             Sign In
           </button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-muted-foreground border-t pt-6 w-full">
-          <p>Staff or Administrator?</p>
-          <Link href="/login" className="text-blue-600 font-medium hover:underline mt-1 inline-block">
-            Go to Staff Portal
-          </Link>
-        </div>
       </div>
     </div>
   );

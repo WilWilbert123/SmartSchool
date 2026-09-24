@@ -10,6 +10,11 @@ export interface SchoolSettings {
   email: string | null;
   phone: string | null;
   address: string | null;
+  logo_url: string | null;
+  principal_name: string | null;
+  principal_title: string | null;
+  principal_signature_url: string | null;
+  right_logo_url: string | null;
 }
 
 export async function getSchoolSettings(): Promise<SchoolSettings | null> {
@@ -17,7 +22,7 @@ export async function getSchoolSettings(): Promise<SchoolSettings | null> {
 
   const { data, error } = await supabase
     .from("schools")
-    .select("id, name, code, email, phone, address")
+    .select("id, name, code, email, phone, address, logo_url, right_logo_url, principal_name, principal_title, principal_signature_url")
     .limit(1)
     .single();
 
@@ -35,6 +40,11 @@ export async function updateSchoolSettings(input: {
   email?: string;
   phone?: string;
   address?: string;
+  logo_url?: string;
+  right_logo_url?: string;
+  principal_name?: string;
+  principal_title?: string;
+  principal_signature_url?: string;
 }) {
   const supabase = await createClient();
 
@@ -50,6 +60,11 @@ export async function updateSchoolSettings(input: {
         email: input.email || null,
         phone: input.phone || null,
         address: input.address || null,
+        logo_url: input.logo_url || null,
+        right_logo_url: input.right_logo_url || null,
+        principal_name: input.principal_name || null,
+        principal_title: input.principal_title || null,
+        principal_signature_url: input.principal_signature_url || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", existing.id);
@@ -66,6 +81,11 @@ export async function updateSchoolSettings(input: {
         email: input.email || null,
         phone: input.phone || null,
         address: input.address || null,
+        logo_url: input.logo_url || null,
+        right_logo_url: input.right_logo_url || null,
+        principal_name: input.principal_name || null,
+        principal_title: input.principal_title || null,
+        principal_signature_url: input.principal_signature_url || null,
       },
     ]);
 

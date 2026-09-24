@@ -39,49 +39,52 @@ export function StudentForm({ onSuccess, onCancel }: StudentFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-2">
       {serverError && (
-        <div className="p-3 text-sm font-medium bg-destructive/15 text-destructive rounded-lg border border-destructive/20">
+        <div className="p-3 text-xs font-medium bg-destructive/15 text-destructive rounded-xl border border-destructive/20">
           {serverError}
         </div>
       )}
       
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg border-b pb-2">Personal Information</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">First Name *</label>
+      {/* 1. Personal Information */}
+      <div className="space-y-3 bg-muted/20 p-4 rounded-2xl border border-border/50">
+        <h3 className="font-extrabold text-xs text-primary uppercase tracking-wider border-b border-border/60 pb-2">
+          1. Personal Information
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">First Name *</label>
             <input
               {...register("first_name")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              placeholder="First Name"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             />
-            {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
+            {errors.first_name && <p className="text-[11px] text-destructive mt-0.5 font-medium">{errors.first_name.message}</p>}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Last Name *</label>
-            <input
-              {...register("last_name")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            />
-            {errors.last_name && <p className="text-sm text-destructive">{errors.last_name.message}</p>}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Middle Name</label>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Middle Name</label>
             <input
               {...register("middle_name")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              placeholder="Middle Name"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Gender</label>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Last Name *</label>
+            <input
+              {...register("last_name")}
+              placeholder="Last Name"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+            {errors.last_name && <p className="text-[11px] text-destructive mt-0.5 font-medium">{errors.last_name.message}</p>}
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Gender</label>
             <select
               {...register("gender")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
-              <option value="">Select...</option>
+              <option value="">Select Gender...</option>
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
@@ -90,48 +93,149 @@ export function StudentForm({ onSuccess, onCancel }: StudentFormProps) {
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg border-b pb-2">Academic Information</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Student Number *</label>
+      {/* 2. Academic & ID Information */}
+      <div className="space-y-3 bg-muted/20 p-4 rounded-2xl border border-border/50">
+        <h3 className="font-extrabold text-xs text-primary uppercase tracking-wider border-b border-border/60 pb-2">
+          2. Academic & ID Information
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Student Number *</label>
             <input
               {...register("student_number")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              placeholder="2026-0001"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs font-mono font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             />
-            {errors.student_number && <p className="text-sm text-destructive">{errors.student_number.message}</p>}
+            {errors.student_number && <p className="text-[11px] text-destructive mt-0.5 font-medium">{errors.student_number.message}</p>}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Admission Date *</label>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">LRN Number</label>
+            <input
+              {...register("lrn")}
+              placeholder="12-digit LRN"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Grade Level</label>
+            <input
+              {...register("grade_level")}
+              placeholder="e.g. Grade 10"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Section Name</label>
+            <input
+              {...register("section_name")}
+              placeholder="e.g. Emerald"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">School Year</label>
+            <input
+              {...register("school_year")}
+              placeholder="2025-2026"
+              defaultValue="2025-2026"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Admission Date *</label>
             <input
               {...register("admission_date")}
               type="date"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             />
-            {errors.admission_date && <p className="text-sm text-destructive">{errors.admission_date.message}</p>}
+            {errors.admission_date && <p className="text-[11px] text-destructive mt-0.5 font-medium">{errors.admission_date.message}</p>}
           </div>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Status</label>
-          <select
-            {...register("current_status")}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <option value="ENROLLED">Enrolled</option>
-            <option value="ALUMNI">Alumni</option>
-            <option value="TRANSFERRED">Transferred</option>
-            <option value="DROPPED">Dropped</option>
-          </select>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Status</label>
+            <select
+              {...register("current_status")}
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              <option value="ENROLLED">Enrolled</option>
+              <option value="ALUMNI">Alumni</option>
+              <option value="TRANSFERRED">Transferred</option>
+              <option value="DROPPED">Dropped</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 pt-4 border-t">
+      {/* 3. Guardian & Emergency Information */}
+      <div className="space-y-3 bg-muted/20 p-4 rounded-2xl border border-border/50">
+        <h3 className="font-extrabold text-xs text-primary uppercase tracking-wider border-b border-border/60 pb-2">
+          3. Guardian & Emergency Details (Back ID)
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="sm:col-span-2">
+            <label className="text-xs font-semibold text-foreground mb-1 block">Parent / Guardian Name</label>
+            <input
+              {...register("guardian_name")}
+              placeholder="Full Name of Guardian"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Relationship</label>
+            <input
+              {...register("guardian_relationship")}
+              placeholder="Mother, Father, etc."
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Blood Type</label>
+            <select
+              {...register("blood_type")}
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              <option value="">Blood Type...</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Emergency Contact Phone</label>
+            <input
+              {...register("guardian_contact")}
+              placeholder="+63 9XX XXX XXXX"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-semibold text-foreground mb-1 block">Home Address</label>
+            <input
+              {...register("address")}
+              placeholder="House No., Street, Barangay, City/Municipality"
+              className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-3 pt-3 border-t">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-9 items-center justify-center rounded-xl border border-input bg-background px-5 text-xs font-semibold hover:bg-accent transition-colors"
           >
             Cancel
           </button>
@@ -139,10 +243,10 @@ export function StudentForm({ onSuccess, onCancel }: StudentFormProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="inline-flex h-9 items-center justify-center rounded-xl bg-primary px-6 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors"
         >
           {isSubmitting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
           ) : null}
           Save Student
         </button>

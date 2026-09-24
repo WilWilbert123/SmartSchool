@@ -23,16 +23,9 @@ export default function AdminLoginPage() {
               <GraduationCap className="h-6 w-6" />
             </div>
           </Link>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-semibold">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-            Restricted Admin Console [Branch 111]
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
             Administrator Authentication
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-xs">
-            Sign in with authorized administrative credentials to manage school system operations.
-          </p>
         </div>
 
         {/* Card */}
