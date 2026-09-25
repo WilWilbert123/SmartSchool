@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
+// @ts-ignore
 import { saveAs } from 'file-saver';
-import { calculateTermGrade, calculateFinalGrade3Terms, computeStudentTerm } from './deped-eclass-record';
+import { calculateTermGrade, calculateFinalGrade3Terms } from './deped-eclass-record';
 
 // Export everything perfectly styled
 export const exportFullECRToExcel = async (
