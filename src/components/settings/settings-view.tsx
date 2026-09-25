@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor, CheckCircle, ShieldCheck, Bell, Building, Palette, Lock, AlertCircle, Loader2, Check, Upload, Image as ImageIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { getSchoolSettings, updateSchoolSettings } from "@/features/settings/settings.actions";
+import { getSchoolSettings, updateSchoolSettings, uploadAssetFile } from "@/features/settings/settings.actions";
 import { ACCENT_COLORS, ACCENT_COLOR_CATEGORIES, applyAccentColor } from "@/lib/theme/accent-colors";
 
 export function SettingsView() {
@@ -53,22 +53,64 @@ export function SettingsView() {
 
   // Fetch live school settings from Supabase on mount
   useEffect(() => {
+    // 1. Initial immediate fallback from localStorage
+    try {
+      const cached = localStorage.getItem("smartschool_school_settings");
+      if (cached) {
+        const p = JSON.parse(cached);
+        if (p.schoolName) setSchoolName(p.schoolName);
+        if (p.schoolCode) setSchoolCode(p.schoolCode);
+        if (p.contactEmail) setContactEmail(p.contactEmail);
+        if (p.contactPhone) setContactPhone(p.contactPhone);
+        if (p.address) setAddress(p.address);
+        if (p.logoUrl) setLogoUrl(p.logoUrl);
+        if (p.rightLogoUrl) setRightLogoUrl(p.rightLogoUrl);
+        if (p.principalName) setPrincipalName(p.principalName);
+        if (p.principalTitle) setPrincipalTitle(p.principalTitle);
+        if (p.principalSignatureUrl) setPrincipalSignatureUrl(p.principalSignatureUrl);
+      }
+    } catch (e) {}
+
     async function loadDbSettings() {
       setIsLoadingSettings(true);
-      const data = await getSchoolSettings();
-      if (data) {
-        if (data.name) setSchoolName(data.name);
-        if (data.code) setSchoolCode(data.code);
-        if (data.email) setContactEmail(data.email);
-        if (data.phone) setContactPhone(data.phone);
-        if (data.address) setAddress(data.address);
-        if (data.logo_url) setLogoUrl(data.logo_url);
-        if (data.right_logo_url) setRightLogoUrl(data.right_logo_url);
-        if (data.principal_name) setPrincipalName(data.principal_name);
-        if (data.principal_title) setPrincipalTitle(data.principal_title);
-        if (data.principal_signature_url) setPrincipalSignatureUrl(data.principal_signature_url);
+      try {
+        const data = await getSchoolSettings();
+        if (data) {
+          if (data.name) setSchoolName(data.name);
+          if (data.code) setSchoolCode(data.code);
+          if (data.email) setContactEmail(data.email);
+          if (data.phone) setContactPhone(data.phone);
+          if (data.address) setAddress(data.address);
+          if (data.logo_url) setLogoUrl(data.logo_url);
+          if (data.right_logo_url) setRightLogoUrl(data.right_logo_url);
+          if (data.principal_name) setPrincipalName(data.principal_name);
+          if (data.principal_title) setPrincipalTitle(data.principal_title);
+          if (data.principal_signature_url) setPrincipalSignatureUrl(data.principal_signature_url);
+
+          // Update local cache
+          try {
+            localStorage.setItem(
+              "smartschool_school_settings",
+              JSON.stringify({
+                schoolName: data.name,
+                schoolCode: data.code,
+                contactEmail: data.email,
+                contactPhone: data.phone,
+                address: data.address,
+                logoUrl: data.logo_url,
+                rightLogoUrl: data.right_logo_url,
+                principalName: data.principal_name,
+                principalTitle: data.principal_title,
+                principalSignatureUrl: data.principal_signature_url,
+              })
+            );
+          } catch (e) {}
+        }
+      } catch (err) {
+        console.error("Failed to load school settings from DB:", err);
+      } finally {
+        setIsLoadingSettings(false);
       }
-      setIsLoadingSettings(false);
     }
     loadDbSettings();
 
@@ -99,25 +141,51 @@ export function SettingsView() {
     e.preventDefault();
     setIsSavingGeneral(true);
 
-    const res = await updateSchoolSettings({
-      name: schoolName,
-      code: schoolCode,
-      email: contactEmail,
-      phone: contactPhone,
-      address,
-      logo_url: logoUrl,
-      right_logo_url: rightLogoUrl,
-      principal_name: principalName,
-      principal_title: principalTitle,
-      principal_signature_url: principalSignatureUrl,
-    });
+    try {
+      const res = await updateSchoolSettings({
+        name: schoolName,
+        code: schoolCode,
+        email: contactEmail,
+        phone: contactPhone,
+        address,
+        logo_url: logoUrl,
+        right_logo_url: rightLogoUrl,
+        principal_name: principalName,
+        principal_title: principalTitle,
+        principal_signature_url: principalSignatureUrl,
+      });
 
-    setIsSavingGeneral(false);
+      setIsSavingGeneral(false);
 
-    if (res.success) {
-      showToast("General settings saved directly to database!");
-    } else {
-      alert("Failed to save to database: " + res.error);
+      if (res.success) {
+        if (res.right_logo_url) setRightLogoUrl(res.right_logo_url);
+        if (res.logo_url) setLogoUrl(res.logo_url);
+
+        try {
+          localStorage.setItem(
+            "smartschool_school_settings",
+            JSON.stringify({
+              schoolName,
+              schoolCode,
+              contactEmail,
+              contactPhone,
+              address,
+              logoUrl: res.logo_url || logoUrl,
+              rightLogoUrl: res.right_logo_url || rightLogoUrl,
+              principalName,
+              principalTitle,
+              principalSignatureUrl,
+            })
+          );
+        } catch (e) {}
+
+        showToast("General settings saved successfully!");
+      } else {
+        alert("Failed to save to database: " + res.error);
+      }
+    } catch (err: any) {
+      setIsSavingGeneral(false);
+      alert("Error saving settings: " + (err?.message || String(err)));
     }
   };
 
@@ -315,7 +383,14 @@ export function SettingsView() {
                     Left ECR Header Logo (Default: Kagawaran ng Edukasyon Seal)
                   </label>
                   <div className="flex items-center gap-3">
-                    <img src={logoUrl || "/deped-seal.svg"} alt="Left Logo" className="h-12 w-12 object-contain border rounded-lg bg-background p-1" />
+                    <img
+                      src={logoUrl || "/deped-seal.png"}
+                      alt="Left Logo"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/deped-seal.png";
+                      }}
+                      className="h-12 w-12 object-contain border rounded-lg bg-background p-1"
+                    />
                     <div className="flex-1 space-y-1">
                       <input
                         type="text"
@@ -324,34 +399,48 @@ export function SettingsView() {
                         onChange={(e) => setLogoUrl(e.target.value)}
                         className="w-full bg-background border h-9 rounded-lg px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                       />
-                      <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground transition-colors">
-                        {isUploadingLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-primary" />}
-                        <span>{isUploadingLogo ? "Uploading..." : "Upload Left Logo"}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setIsUploadingLogo(true);
-                            try {
-                              const supabase = createClient();
-                              const fileName = `logo-left-${Date.now()}-${file.name}`;
-                              const { data, error } = await supabase.storage.from('id-assets').upload(fileName, file, { upsert: true });
-                              if (error) throw error;
-                              const { data: publicUrlData } = supabase.storage.from('id-assets').getPublicUrl(fileName);
-                              setLogoUrl(publicUrlData.publicUrl);
-                            } catch (err) {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => setLogoUrl(ev.target?.result as string);
-                              reader.readAsDataURL(file);
-                            } finally {
-                              setIsUploadingLogo(false);
-                            }
-                          }}
-                        />
-                      </label>
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground transition-colors">
+                          {isUploadingLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-primary" />}
+                          <span>{isUploadingLogo ? "Uploading..." : "Upload Left Logo"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setIsUploadingLogo(true);
+                              try {
+                                const formData = new FormData();
+                                formData.append("file", file);
+                                formData.append("prefix", "logo-left");
+                                const res = await uploadAssetFile(formData);
+                                if (res.success && res.url) {
+                                  setLogoUrl(res.url);
+                                } else {
+                                  throw new Error(res.error || "Upload failed");
+                                }
+                              } catch (err) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setLogoUrl(ev.target?.result as string);
+                                reader.readAsDataURL(file);
+                              } finally {
+                                setIsUploadingLogo(false);
+                              }
+                            }}
+                          />
+                        </label>
+                        {logoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl("/deped-seal.png")}
+                            className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                          >
+                            Reset to Default Seal
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -362,43 +451,64 @@ export function SettingsView() {
                     Right ECR Header Logo (Default: Official DepEd Logo)
                   </label>
                   <div className="flex items-center gap-3">
-                    <img src={rightLogoUrl || "/deped-logo.svg"} alt="Right Logo" className="h-12 w-20 object-contain border rounded-lg bg-background p-1" />
+                    <img
+                      src={rightLogoUrl || "/deped-logo.png"}
+                      alt="Right Logo"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/deped-logo.png";
+                      }}
+                      className="h-12 w-20 object-contain border rounded-lg bg-background p-1"
+                    />
                     <div className="flex-1 space-y-1">
                       <input
                         type="text"
-                        placeholder="Right Logo URL..."
+                        placeholder="Right Logo URL or paste image data..."
                         value={rightLogoUrl}
                         onChange={(e) => setRightLogoUrl(e.target.value)}
                         className="w-full bg-background border h-9 rounded-lg px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                       />
-                      <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground transition-colors">
-                        {isUploadingRightLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-primary" />}
-                        <span>{isUploadingRightLogo ? "Uploading..." : "Upload Right Logo"}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setIsUploadingRightLogo(true);
-                            try {
-                              const supabase = createClient();
-                              const fileName = `logo-right-${Date.now()}-${file.name}`;
-                              const { data, error } = await supabase.storage.from('id-assets').upload(fileName, file, { upsert: true });
-                              if (error) throw error;
-                              const { data: publicUrlData } = supabase.storage.from('id-assets').getPublicUrl(fileName);
-                              setRightLogoUrl(publicUrlData.publicUrl);
-                            } catch (err) {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => setRightLogoUrl(ev.target?.result as string);
-                              reader.readAsDataURL(file);
-                            } finally {
-                              setIsUploadingRightLogo(false);
-                            }
-                          }}
-                        />
-                      </label>
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground transition-colors">
+                          {isUploadingRightLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-primary" />}
+                          <span>{isUploadingRightLogo ? "Uploading..." : "Upload Right Logo"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setIsUploadingRightLogo(true);
+                              try {
+                                const formData = new FormData();
+                                formData.append("file", file);
+                                formData.append("prefix", "logo-right");
+                                const res = await uploadAssetFile(formData);
+                                if (res.success && res.url) {
+                                  setRightLogoUrl(res.url);
+                                } else {
+                                  throw new Error(res.error || "Upload failed");
+                                }
+                              } catch (err) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setRightLogoUrl(ev.target?.result as string);
+                                reader.readAsDataURL(file);
+                              } finally {
+                                setIsUploadingRightLogo(false);
+                              }
+                            }}
+                          />
+                        </label>
+                        {rightLogoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setRightLogoUrl("/deped-logo.png")}
+                            className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                          >
+                            Reset to Official DepEd Logo
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -464,12 +574,15 @@ export function SettingsView() {
                           if (!file) return;
                           setIsUploadingSig(true);
                           try {
-                            const supabase = createClient();
-                            const fileName = `sig-${Date.now()}-${file.name}`;
-                            const { data, error } = await supabase.storage.from('id-assets').upload(fileName, file, { upsert: true });
-                            if (error) throw error;
-                            const { data: publicUrlData } = supabase.storage.from('id-assets').getPublicUrl(fileName);
-                            setPrincipalSignatureUrl(publicUrlData.publicUrl);
+                            const formData = new FormData();
+                            formData.append("file", file);
+                            formData.append("prefix", "sig");
+                            const res = await uploadAssetFile(formData);
+                            if (res.success && res.url) {
+                              setPrincipalSignatureUrl(res.url);
+                            } else {
+                              throw new Error(res.error || "Upload failed");
+                            }
                           } catch (err) {
                             const reader = new FileReader();
                             reader.onload = (ev) => setPrincipalSignatureUrl(ev.target?.result as string);

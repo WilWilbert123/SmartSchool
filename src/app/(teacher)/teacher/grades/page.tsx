@@ -62,7 +62,7 @@ export default async function TeacherGradesPage({
         </p>
       </div>
 
-      <DepEdECRTable />
+      <DepEdECRTable subjectName={classSubjects.find(cs => cs.subject_id === subjectId)?.subjects?.name} students={gradeData} />
     </div>
   );
 }

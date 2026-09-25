@@ -46,7 +46,7 @@ export function transmuteGrade(initialGrade: number): number {
 
 export function getDescriptor(transmutedGrade: number): string {
   if (transmutedGrade >= 90) return "Advancing";
-  if (transmutedGrade >= 85) return "Benchmarking";
+  if (transmutedGrade >= 80) return "Benchmarking";
   if (transmutedGrade >= 75) return "Connecting";
   if (transmutedGrade >= 65) return "Developing";
   return "Emerging";
@@ -101,6 +101,78 @@ export function calculateTermGrade(scores: ComponentScores) {
   };
 }
 
+export interface ValuesEdScores {
+  wwCognitive: number[]; wwCognitiveHPS: number[];
+  wwAffective: number[]; wwAffectiveHPS: number[];
+  ptCognitive: number[]; ptCognitiveHPS: number[];
+  ptAffective: number[]; ptAffectiveHPS: number[];
+  ptBehavioral: number[]; ptBehavioralHPS: number[];
+  exST1: number; exST1HPS: number;
+  exST2: number; exST2HPS: number;
+  exTE: number; exTEHPS: number;
+}
+
+export function calculateValuesEdTermGrade(scores: ValuesEdScores) {
+  // Written Works (20%)
+  const wwCogTotal = scores.wwCognitive.reduce((a, b) => a + b, 0);
+  const wwCogHPS = scores.wwCognitiveHPS.reduce((a, b) => a + b, 0);
+  const wwCogPS = wwCogHPS > 0 ? (wwCogTotal / wwCogHPS) * 100 : 0;
+  const wwCogWS = wwCogPS * 0.10;
+
+  const wwAffTotal = scores.wwAffective.reduce((a, b) => a + b, 0);
+  const wwAffHPS = scores.wwAffectiveHPS.reduce((a, b) => a + b, 0);
+  const wwAffPS = wwAffHPS > 0 ? (wwAffTotal / wwAffHPS) * 100 : 0;
+  const wwAffWS = wwAffPS * 0.10;
+  
+  const wwWS = wwCogWS + wwAffWS;
+
+  // Performance Tasks (50%)
+  const ptCogTotal = scores.ptCognitive.reduce((a, b) => a + b, 0);
+  const ptCogHPS = scores.ptCognitiveHPS.reduce((a, b) => a + b, 0);
+  const ptCogPS = ptCogHPS > 0 ? (ptCogTotal / ptCogHPS) * 100 : 0;
+  const ptCogWS = ptCogPS * 0.10;
+
+  const ptAffTotal = scores.ptAffective.reduce((a, b) => a + b, 0);
+  const ptAffHPS = scores.ptAffectiveHPS.reduce((a, b) => a + b, 0);
+  const ptAffPS = ptAffHPS > 0 ? (ptAffTotal / ptAffHPS) * 100 : 0;
+  const ptAffWS = ptAffPS * 0.10;
+
+  const ptBehTotal = scores.ptBehavioral.reduce((a, b) => a + b, 0);
+  const ptBehHPS = scores.ptBehavioralHPS.reduce((a, b) => a + b, 0);
+  const ptBehPS = ptBehHPS > 0 ? (ptBehTotal / ptBehHPS) * 100 : 0;
+  const ptBehWS = ptBehPS * 0.30;
+
+  const ptWS = ptCogWS + ptAffWS + ptBehWS;
+
+  // Exams (30%)
+  const exST1_WS = scores.exST1HPS > 0 ? (scores.exST1 / scores.exST1HPS) * 30 : 0;
+  const exST2_WS = scores.exST2HPS > 0 ? (scores.exST2 / scores.exST2HPS) * 30 : 0;
+  const exTE_WS = scores.exTEHPS > 0 ? (scores.exTE / scores.exTEHPS) * 40 : 0;
+  
+  const exPS = exST1_WS + exST2_WS + exTE_WS; // Max 100
+  const exWS = exPS * 0.30;
+
+  const initialGrade = Number((wwWS + ptWS + exWS).toFixed(2));
+  const transmutedGrade = transmuteGrade(initialGrade);
+  const descriptor = getDescriptor(transmutedGrade);
+
+  return {
+    wwCogTotal, wwCogPS, wwCogWS,
+    wwAffTotal, wwAffPS, wwAffWS,
+    wwWS,
+    ptCogTotal, ptCogPS, ptCogWS,
+    ptAffTotal, ptAffPS, ptAffWS,
+    ptBehTotal, ptBehPS, ptBehWS,
+    ptWS,
+    exST1_WS, exST2_WS, exTE_WS,
+    exPS, exWS,
+    initialGrade,
+    transmutedGrade,
+    descriptor,
+    remark: transmutedGrade >= 75 ? "PASSED" : "FAILED",
+  };
+}
+
 export function calculateFinalGrade(term1: number, term2: number) {
   const average = (term1 + term2) / 2;
   const finalTransmuted = Math.round(average);
@@ -121,23 +193,16 @@ export function calculateFinalGrade3Terms(term1: number, term2: number, term3: n
   };
 }
 
-
 export function calculateItemAnalysis(scores: number[], maxScore: number) {
   if (scores.length === 0) return { totalStudents: 0, highestScore: 0, lowestScore: 0, mean: 0, mps: 0, sd: 0 };
-
   const N = scores.length;
   const sum = scores.reduce((acc, curr) => acc + curr, 0);
   const mean = sum / N;
   const mps = (mean / maxScore) * 100;
   const variance = scores.reduce((acc, curr) => acc + Math.pow(curr - mean, 2), 0) / N;
   const sd = Math.sqrt(variance);
-
   return {
-    totalStudents: N,
-    highestScore: Math.max(...scores),
-    lowestScore: Math.min(...scores),
-    mean: Number(mean.toFixed(2)),
-    mps: Number(mps.toFixed(2)),
-    sd: Number(sd.toFixed(2)),
+    totalStudents: N, highestScore: Math.max(...scores), lowestScore: Math.min(...scores),
+    mean: Number(mean.toFixed(2)), mps: Number(mps.toFixed(2)), sd: Number(sd.toFixed(2)),
   };
 }

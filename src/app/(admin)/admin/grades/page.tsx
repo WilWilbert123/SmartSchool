@@ -58,86 +58,83 @@ export default async function AdminGradesPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Sidebar Filters */}
-        <div className="md:col-span-1 space-y-4 print:hidden">
-          <div className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="font-semibold text-sm flex items-center mb-4">
-              <Users className="mr-2 h-4 w-4" /> Select Class & Mode
-            </h3>
-            
-            <form method="GET" action="/admin/grades" className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Record Sheet View</label>
-                <select 
-                  name="view" 
-                  defaultValue={view || "ecr"}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-primary font-medium"
-                >
-                  <option value="ecr">DepEd E-Class Record (Input Data, Term 1-3, Final)</option>
-                  <option value="standard">Standard Quarterly Summary (Q1-Q4)</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Class / Section</label>
-                <select 
-                  name="classId" 
-                  defaultValue={classId || (classes && classes[0]?.id) || "55555555-5555-5555-5555-555555555551"}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="" disabled>Select a class...</option>
-                  {classes && classes.length > 0 ? (
-                    classes.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.grade_level?.replace('_', ' ')} - {c.section_name} ({c.academic_years?.name || '2025-2026'})
-                      </option>
-                    ))
-                  ) : (
-                    <option value="55555555-5555-5555-5555-555555555551">GRADE 10 - Section A - Emerald (2025-2026)</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Subject (Optional)</label>
-                <select 
-                  name="subjectId" 
-                  defaultValue={subjectId || ""}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus-ring-primary"
-                >
-                  <option value="">All Subjects</option>
-                  {classSubjects.map((cs: any) => (
-                    <option key={cs.subject_id} value={cs.subject_id}>
-                      {cs.subjects?.name} ({cs.subjects?.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button 
-                type="submit" 
-                className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-2 shadow-sm"
-              >
-                Load Sheet Data
-              </button>
-            </form>
+      {/* Top 1-Line Filter Bar */}
+      <div className="bg-card border rounded-2xl p-3.5 sm:p-4 shadow-sm print:hidden">
+        <form method="GET" action="/admin/grades" className="flex flex-col lg:flex-row items-stretch lg:items-end gap-3.5">
+          <div className="flex items-center gap-2 pr-2 text-sm font-semibold whitespace-nowrap text-foreground lg:border-r border-border/60 pb-1 lg:pb-2.5">
+            <Users className="h-4 w-4 text-primary" />
+            <span>Select Class & Mode</span>
           </div>
-        </div>
 
-        {/* Main Content Area */}
-        <div className="md:col-span-3 print:col-span-4 print:w-full">
-          {isECRView || !classId ? (
-            <DepEdECRTable />
-          ) : gradeError ? (
-            <div className="p-4 rounded-xl border bg-destructive/10 border-destructive/20 text-destructive flex items-center gap-3">
-              <AlertCircle className="h-5 w-5" />
-              <p className="font-medium">{gradeError}</p>
-            </div>
-          ) : (
-            <GradeTable classSubjectId={currentClassSubjectId || "cs-default"} data={gradeData} />
-          )}
-        </div>
+          <div className="flex-1 min-w-[200px] space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Record Sheet View</label>
+            <select 
+              name="view" 
+              defaultValue={view || "ecr"}
+              className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+            >
+              <option value="ecr">DepEd E-Class Record (Input Data, Term 1-3, Final)</option>
+              <option value="standard">Standard Quarterly Summary (Q1-Q4)</option>
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-[220px] space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Class / Section</label>
+            <select 
+              name="classId" 
+              defaultValue={classId || (classes && classes[0]?.id) || "55555555-5555-5555-5555-555555555551"}
+              className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="" disabled>Select a class...</option>
+              {classes && classes.length > 0 ? (
+                classes.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.grade_level?.replace('_', ' ')} - {c.section_name} ({c.academic_years?.name || '2025-2026'})
+                  </option>
+                ))
+              ) : (
+                <option value="55555555-5555-5555-5555-555555555551">GRADE 10 - Section A - Emerald (2025-2026)</option>
+              )}
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-[180px] space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Subject (Optional)</label>
+            <select 
+              name="subjectId" 
+              defaultValue={subjectId || ""}
+              className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">All Subjects</option>
+              {classSubjects.map((cs: any) => (
+                <option key={cs.subject_id} value={cs.subject_id}>
+                  {cs.subjects?.name} ({cs.subjects?.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button 
+            type="submit" 
+            className="h-10 px-5 inline-flex items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm whitespace-nowrap self-stretch lg:self-end"
+          >
+            Load Sheet Data
+          </button>
+        </form>
+      </div>
+
+      {/* Main Content Area - Full Width */}
+      <div className="w-full print:w-full">
+        {isECRView || !classId ? (
+          <DepEdECRTable subjectName={classSubjects.find((cs: any) => cs.subject_id === subjectId)?.subjects?.name} students={gradeData} />
+        ) : gradeError ? (
+          <div className="p-4 rounded-xl border bg-destructive/10 border-destructive/20 text-destructive flex items-center gap-3">
+            <AlertCircle className="h-5 w-5" />
+            <p className="font-medium">{gradeError}</p>
+          </div>
+        ) : (
+          <GradeTable classSubjectId={currentClassSubjectId || "cs-default"} data={gradeData} />
+        )}
       </div>
     </div>
   );

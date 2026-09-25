@@ -30,7 +30,7 @@ export async function getClassGrades(classId: string, subjectId?: string) {
       student:students(
         id,
         student_number,
-        person:people(first_name, last_name, middle_name)
+        person:people(first_name, last_name, middle_name, gender)
       )
     `)
     .eq('class_id', classId);
@@ -63,7 +63,7 @@ export async function getClassGrades(classId: string, subjectId?: string) {
       student: {
         id: "std-wg-1",
         student_number: "2026-0001",
-        person: { first_name: "Wilbert", last_name: "Gamis", middle_name: "A." }
+        person: { first_name: "Wilbert", last_name: "Gamis", middle_name: "A.", gender: "Male" }
       },
       grades: { quarter_1: 92, quarter_2: 94, quarter_3: 90, quarter_4: 95, final_grade: 92.75, remarks: "PASSED - Excellent Performance" }
     },
@@ -72,7 +72,7 @@ export async function getClassGrades(classId: string, subjectId?: string) {
       student: {
         id: "std-jdc-2",
         student_number: "2026-0002",
-        person: { first_name: "Juan", last_name: "Dela Cruz", middle_name: "B." }
+        person: { first_name: "Juan", last_name: "Dela Cruz", middle_name: "B.", gender: "Male" }
       },
       grades: { quarter_1: 88, quarter_2: 90, quarter_3: 86, quarter_4: 91, final_grade: 88.75, remarks: "PASSED" }
     },
@@ -81,7 +81,7 @@ export async function getClassGrades(classId: string, subjectId?: string) {
       student: {
         id: "std-ms-3",
         student_number: "2026-0003",
-        person: { first_name: "Maria", last_name: "Santos", middle_name: "C." }
+        person: { first_name: "Maria", last_name: "Santos", middle_name: "C.", gender: "Female" }
       },
       grades: { quarter_1: 95, quarter_2: 96, quarter_3: 94, quarter_4: 97, final_grade: 95.50, remarks: "PASSED - With Honors" }
     }
